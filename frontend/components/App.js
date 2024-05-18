@@ -10,49 +10,65 @@ function App() {
   // ❗ Create state to hold the data from the API
   // ❗ Create effects to fetch the data and put it in state
 
-    const [characters, setCharacters] = useState([]);
+        const [people, setPeople] = useState([]);
+        const [planets, setPlanets] = useState([]);
+        const [data, setData] = useState([]);
+        console.log("DATA", data);
 
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = () => {
-        let requestPlanets = axios.get(urlPlanets);
-        let requestPeople = axios.get(urlPeople);
-        let Datas = [];
-        Promise.all([requestPlanets, requestPeople])
-            .then(responses => {
-                const [responsePlanets, responsePeople] = responses;
-                responsePeople.data.forEach((data1) => {
-                    responsePlanets.data.forEach((data2) => {
-                        if (data1.homeworld === data2.id)
-                        {
-                            let newData = data1;
-                            newData.homeworld = data2;
-                            Datas.push(newData);
-                        }
-                    })
+        const fetch = async (url, setter) => {
+            await axios
+                .get(url)
+                .then((data) => {
+                    setter(data.data);
                 })
-                setCharacters(Datas);
-            })
-            .catch(error => {
-                console.log('Error: ', error);
-            });
-    }
+                .catch((err) => {
+                    console.log(err);
+                });
+        };
 
-  return (
-    <div>
-      <h2>Star Wars Characters</h2>
-      <p>See the README of the project for instructions on completing this challenge</p>
-      {/* ❗ Map over the data in state, rendering a Character at each iteration */}
-        {
-            characters.map(
-                (character, index) => <Character key={index} character={character}/>
-            )
-        }
-    </div>
-  )
-}
+        const mergedData = async () => {
+            let newData = people.map((value) => {
+                let newObj = {
+                    id: value.id,
+                    name: value.name,
+                };
+                let homePlanet = planets.find((planet) => {
+                    return planet.id === value.homeworld;
+                });
+                newObj.homeworldName = homePlanet.name;
+                return newObj;
+            });
+
+            setData(newData);
+        };
+
+        useEffect(() => {
+            fetch(urlPeople, setPeople);
+            fetch(urlPlanets, setPlanets);
+        }, []);
+
+        useEffect(() => {
+            if (people.length && planets.length) {
+                mergedData();
+            }
+        }, [people, planets]);
+
+        console.log(data);
+
+        return (
+            <div>
+                <h2>Star Wars Characters</h2>
+                <p>
+                    See the README of the project for instructions on completing this
+                    challenge
+                </p>
+                {/* ❗ Map over the data in state, rendering a Character at each iteration */}
+                {data.map((value) => {
+                    return <Character key={value.id} data={value} />;
+                })}
+            </div>
+        );
+    }
 
 export default App
 
